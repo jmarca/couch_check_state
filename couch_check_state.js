@@ -63,15 +63,32 @@ function couchdb_check_state(opts,cb){
     .end(function(err,res){
         if(err) return cb(err)
         var doc = res.body
+        // let state be an array
+        var result = []
+        var _state = state
+        if(! _.isArray(state)){
+            _state = [state]
+        }
         if(doc[year] === undefined){
-            if(doc[state] === undefined){
-                return cb(null,null)
-            }else{
-                return cb(null,doc[state])
-            }
+            _.each(_state,function(s){
+                if(doc[state] === undefined){
+                    result.push(null)
+                }else{
+                    result.push(doc[state])
+                }
+            })
+        }else{
+            _.each(_state,function(s){
+                if(doc[year][state] === undefined){
+                    result.push(null)
+                }else{
+                    result.push(doc[year][state])
+                }
+            })
         }
         // if still here, have doc year, but maybe not doc state
-        return cb(null, doc[year][state])
+        if(result.length === 1) result = result[0]
+        return cb(null, result)
     })
 }
 module.exports=couchdb_check_state
