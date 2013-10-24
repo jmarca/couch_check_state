@@ -4,7 +4,7 @@ This is a small package that uses superagent to access "state" stored
 in CouchDB.  What I often do is to use a CouchDB database as a way to
 store state across machines.  For example, I might stash that a
 detector is being processed, or that a detector has completed a step
-in its processing.  
+in its processing.
 
 The basic idea is that a document holds all of the information for a
 particular detector, but that the detector might have multiple years
@@ -76,12 +76,12 @@ might look like:
        "truckimputed": "2012-01-31b finished",
        "vdsraw_max_iterations": 0
    },
-   ... 
+   ...
 ```
 
 In such a case, one might want to know the state of
 `vdsraw_chain_lengths` for 2008, say to test whether any are greater
-than 5, or for 2009, so see if that process has even been run.  
+than 5, or for 2009, so see if that process has even been run.
 
 This library helps with that.  To get 2010's `vdsraw_chain_length`
 entry, you would do something like this:
@@ -91,7 +91,7 @@ entry, you would do something like this:
 
 var checker = require('couch_check_state')
 checker({'db':'vdsdata%2ftracking'
-         ,'doc':detector_id
+         ,'doc':vdsid
          ,'year':yr
          ,'state':'vdsraw_chain_lengths'}
          ,function(err,state){
