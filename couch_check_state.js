@@ -2,6 +2,7 @@ var superagent = require('superagent')
 var server = process.env.COUCHDB_HOST || 'localhost'
 var port = process.env.COUCHDB_PORT || 5984
 var couchdb = 'http://'+server+':'+port
+var _ = require('underscore')
 //console.log(couchdb)
 /**
  * couchdb_check_state(opts,cb)
@@ -53,8 +54,11 @@ function couchdb_check_state(opts,cb){
     var id = opts.doc
     var year = opts.year
     var state = opts.state
+    var cdb = opts.couchdb || server
+    var cport = opts.port || port
+    cdb = 'http://'+server+':'+cport
 
-    var query = couchdb+'/'+db+'/'+id
+    var query = cdb+'/'+db+'/'+id
     //console.log(query)
     superagent
     .get(query)
