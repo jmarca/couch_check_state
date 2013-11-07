@@ -56,7 +56,7 @@ function couchdb_check_state(opts,cb){
     var state = opts.state
     var cdb = opts.couchdb || server
     var cport = opts.port || port
-    cdb = 'http://'+server+':'+cport
+    cdb = 'http://'+cdb +':'+cport
 
     var query = cdb+'/'+db+'/'+id
     //console.log(query)
