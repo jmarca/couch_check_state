@@ -83,7 +83,6 @@ function _couchdb_check_state(opts,cb){
     }
 
     var query = cdb+'/'+db+'/'+id
-    //console.log(query)
     superagent
     .get(query)
     .set('accept','application/json')

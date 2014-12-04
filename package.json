@@ -14,7 +14,8 @@
   },
   "devDependencies": {
     "nano": "~4.1.4",
-    "queue-async": "^1.0.7"
+    "queue-async": "^1.0.7",
+    "request": "^2.49.0"
   },
   "scripts": {
     "test": "mocha"
