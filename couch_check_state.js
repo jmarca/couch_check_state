@@ -1,17 +1,32 @@
 var superagent = require('superagent')
-var server = process.env.COUCHDB_HOST || 'localhost'
-var port = process.env.COUCHDB_PORT || 5984
-var couchdb = 'http://'+server+':'+port
 var _ = require('underscore')
-//console.log(couchdb)
+var config={'couchdb':{}}
+var config_okay = require('config_okay')
+
+function couchdb_check_state(opts,cb){
+    if(config.couchdb.url === undefined && opts.config_file !== undefined){
+        return config_okay(opts.config_file,function(e,c){
+            config.couchdb = c.couchdb
+            return _couchdb_check_state(opts,cb)
+        })
+    }
+
+    // otherwise, hopefully everything is defined in the opts file!
+    return _couchdb_check_state(opts,cb)
+}
+
 /**
  * couchdb_check_state(opts,cb)
  * opts = {'db': the couchdb holding the document,
  *         'doc': the document holding the state,
  *         'year': the year to check (any sub key in the doc, really),
  *         'state': the state to get from the doc under the 'year' key,
+ *         'config_file': where to look for options like HOST,PORT
  * }
  * cb = a callback
+ *
+ * See docs for config_okay to see what to put into config_file
+ * make sure config_file is chmod 0600
  *
  * cb will be called as cb(error,value)
  *
@@ -49,13 +64,19 @@ var _ = require('underscore')
  * couchdb name passed as detector_id
  *
  */
-function couchdb_check_state(opts,cb){
-    var db = opts.db
+function _couchdb_check_state(opts,cb){
+    var c = {}
+    _.assign(c,config.couchdb,opts)
+    var db = opts.db || c.db
     var id = opts.doc
     var year = opts.year
     var state = opts.state
-    var cdb = opts.couchdb || server
-    var cport = opts.port || port
+    if(opts.couchdb !== undefined){
+        console.log('hey, you are using an old way of doing this')
+        c.url = opts.couchdb
+    }
+    var cdb   = c.url || c.host ||  '127.0.0.1'
+    var cport = c.port || 5984
     cdb = cdb+':'+cport
     if(! /http/.test(cdb)){
         cdb = 'http://'+cdb

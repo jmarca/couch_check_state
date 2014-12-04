@@ -7,12 +7,14 @@
     "test": "test"
   },
   "dependencies": {
+    "config_okay": "0.0.2",
     "should": "",
     "superagent": "",
     "underscore": "~1.5.2"
   },
   "devDependencies": {
-    "nano": "~4.1.4"
+    "nano": "~4.1.4",
+    "queue-async": "^1.0.7"
   },
   "scripts": {
     "test": "mocha"
