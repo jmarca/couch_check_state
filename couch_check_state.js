@@ -1,5 +1,5 @@
 var superagent = require('superagent')
-var _ = require('underscore')
+var _ = require('lodash')
 var config={'couchdb':{}}
 var config_okay = require('config_okay')
 
