@@ -19,6 +19,8 @@ var headers = {
     accept: 'application/json'
 };
 
+cdb
+
 function create_tempdb(cb){
     var date = new Date()
     var test_db_unique = [config.couchdb.db,
@@ -27,8 +29,8 @@ function create_tempdb(cb){
                           date.getSeconds(),
                           date.getMilliseconds()].join('-')
     config.couchdb.db = test_db_unique
-    var cdb =
-        [config.couchdb.url+':'+config.couchdb.port
+    cdb ='http://'+
+        [config.couchdb.host+':'+config.couchdb.port
         ,config.couchdb.db].join('/')
     request.put(cdb,{
         headers:headers,
@@ -49,58 +51,55 @@ function create_tempdb(cb){
     return null
 }
 
+var cdb
 function populate_tempdb(cb){
     // console.log('populating test db')
-    var cdb =
-        [config.couchdb.url+':'+config.couchdb.port
+    var cdb ='http://'+
+        [config.couchdb.host+':'+config.couchdb.port
         ,config.couchdb.db].join('/')
     // console.log(cdb)
     var docversion=''
     queue(1)
-    .defer(function(cb2){
-        // console.log('populating test db with json file')
-        fs.readFile(testjson,function(e,data){
-            var obj = JSON.parse(data)
-            var url = cdb+'/801230'
-            request({method:'PUT',
-                     headers:headers,
-                     url:url,
-                     json:obj}
-                   ,function(e,r,b){
-                        // console.log(b)
-                        docversion = b.rev
-                        cb2(null,r)
+    .defer(fs.readFile,testjson)
+    .await(function(e,data){
+        var obj = JSON.parse(data)
+        var url = cdb+'/801230'
+        request({method:'PUT',
+                 headers:headers,
+                 url:url,
+                 json:obj}
+               ,function(e,r,b){
+                    // console.log(b)
+                    docversion = b.rev
+                    queue()
+                    .defer(function(cb3){
+                        // console.log('populating test db with png attachment')
+                        //console.log(res)
+
+                        var readstream = fs.createReadStream(testattch)
+                        var url = cdb+'/801230/801230_2008_001.png'
+                        url+='?rev='+docversion
+
+                        //console.log(url)
+                        ///var revision = docversion
+                        var rq = request.put(url,
+                                             {headers:{'content-type':'image/png'}},
+                                             function(e,r,b){
+
+                                                 cb3(null,r)
+
+                                             })
+
+                        readstream.pipe(rq)
+
                     })
-        })
-        return null
-    })
-    .defer(function(cb3){
-        // console.log('populating test db with png attachment')
-        //console.log(res)
+                    .await(function(e){
+                        // console.log('both done')
+                        should.not.exist(e)
+                        return cb()
+                    })
 
-        var readstream = fs.createReadStream(testattch)
-        var url = cdb+'/801230/801230_2008_001.png'
-        url+='?rev='+docversion
-
-        //console.log(url)
-        ///var revision = docversion
-        var rq = request.put(url,
-                             {headers:{'content-type':'image/png'}},
-                             function(e,r,b){
-
-                    cb3(null,r)
-
-                 })
-
-        readstream.pipe(rq)
-
-    })
-
-
-    .await(function(e,r1,r2){
-        // console.log('both done')
-        should.not.exist(e)
-        return cb()
+                })
     })
 }
 
@@ -120,9 +119,6 @@ before(function(done){
 
 after(function(done){
 
-    var cdb =
-        config.couchdb.url+':'+config.couchdb.port
-             + '/'+ config.couchdb.db
     if(config.delete_db){
         request.del(cdb,{
             headers:headers,
