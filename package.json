@@ -1,6 +1,6 @@
 {
   "name": "couch_check_state",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Utilities to help use couchdb as a state storage db",
   "main": "couch_check_state.js",
   "directories": {
