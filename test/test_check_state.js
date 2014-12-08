@@ -19,7 +19,7 @@ var headers = {
     accept: 'application/json'
 };
 
-cdb
+var cdb
 
 function create_tempdb(cb){
     var date = new Date()
