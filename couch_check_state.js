@@ -15,6 +15,17 @@ function couchdb_check_state(opts,cb){
     return _couchdb_check_state(opts,cb)
 }
 
+function couchdb_check_exists(opts,cb){
+    if(config.couchdb.host === undefined && opts.config_file !== undefined){
+        return config_okay(opts.config_file,function(e,c){
+            config.couchdb = c.couchdb
+            return _couchdb_check_exists(opts,cb)
+        })
+    }
+    // otherwise, hopefully everything is defined in the opts file!
+    return _couchdb_check_exists(opts,cb)
+}
+
 /**
  * couchdb_check_state(opts,cb)
  * opts = {'db': the couchdb holding the document,
@@ -117,4 +128,50 @@ function _couchdb_check_state(opts,cb){
         return cb(null, result)
     })
 }
+
+/**
+ * couchdb_check_exists(opts,cb)
+ * opts = {'db': the couchdb holding the document,
+ *         'doc': the document, does it exist or not,
+ *         'config_file': where to look for options like HOST,PORT
+ * }
+ * cb = a callback
+ *
+ * See docs for config_okay to see what to put into config_file
+ * make sure config_file is chmod 0600
+ *
+ * cb will be called as cb(error,value)
+ *
+ * The error will contain any error passed from accessing couchdb
+ *
+ * The value will be undefined if HEAD does not come back with an etag
+ * in the header
+ *
+ * If HEAD returns an etag, then the result will equal that (the
+ * revision number of the document)
+ *
+ */
+function _couchdb_check_exists(opts,cb){
+    var c = {}
+    _.assign(c,config.couchdb,opts)
+    var db = c.db
+    var id = c.doc
+    var cdb   = c.host ||  '127.0.0.1'
+    var cport = c.port || 5984
+    cdb = cdb+':'+cport
+    if(! /http/.test(cdb)){
+        cdb = 'http://'+cdb
+    }
+    var result
+    var uri = cdb+'/'+db+'/'+id
+    superagent.head(uri)
+    .end(function(err,res){
+        if(res.header.etag){
+            result = JSON.parse(res.headers.etag)
+        }
+        return cb(null,result)
+    })
+}
+
 module.exports=couchdb_check_state
+module.exports.check_exists=couchdb_check_exists

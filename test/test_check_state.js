@@ -177,3 +177,29 @@ describe('get vds id states',function(){
                    })
        });
 })
+describe('check existence',function(){
+    it('should get the rev for 801230'
+      ,function(done){
+           checker.check_exists(_.assign({},config.couchdb,
+                                         {'doc':801230})
+                               ,function(err,rev){
+                                    should.not.exist(err)
+                                    should.exist(rev)
+                                    rev.should.match(/\d+-\w+/)
+                                    return done()
+                                })
+           return null
+       });
+    it('should not get the revision for a non-doc'
+      ,function(done){
+           checker.check_exists(_.assign({},config.couchdb,
+                                         {'doc':123456789}
+                                        )
+                               ,function(err,rev){
+                                    should.not.exist(err)
+                                    should.not.exist(rev)
+                                    return done()
+                                })
+           return null
+       });
+})
