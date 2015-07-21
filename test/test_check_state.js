@@ -51,7 +51,6 @@ function create_tempdb(cb){
     return null
 }
 
-var cdb
 function populate_tempdb(cb){
     // console.log('populating test db')
     var cdb ='http://'+
