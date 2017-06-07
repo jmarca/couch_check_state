@@ -129,7 +129,7 @@ function get_states(t){
         .then(t=>{
             return t.test('should get _attachments in place of year attachment for state',tt=>{
 
-                tt.plan(4)
+                tt.plan(5)
                 const task = Object.assign({}
                                            ,config.couchdb
                                            ,{'doc':801230
@@ -141,7 +141,10 @@ function get_states(t){
                     tt.notOk(err,'should not get error on checker')
                     tt.ok(state)
                     tt.ok(state.digest)
-                    tt.is(state.digest,'md5-wHfu6lFU9n1SHA9YykbyXQ==')
+                    console.log(state)
+                    tt.is(state.length,457596,'expected file length')
+                    const wantdigest = "md5-wHfu6lFU9n1SHA9YykbyXQ=="
+                    tt.is(state.digest,wantdigest,'matched md5 digests')
                     return tt.end()
                 })
                 return null
