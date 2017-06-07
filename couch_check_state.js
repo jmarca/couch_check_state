@@ -1,5 +1,5 @@
 var superagent = require('superagent')
-var _ = require('lodash')
+
 var config={'couchdb':{}}
 var config_okay = require('config_okay')
 
@@ -78,7 +78,7 @@ function couchdb_check_exists(opts,cb){
  */
 function _couchdb_check_state(opts,cb){
     var c = {}
-    _.assign(c,config.couchdb,opts)
+    Object.assign(c,config.couchdb,opts)
     var db = c.db
     var id = c.doc
     var year = c.year
@@ -103,12 +103,12 @@ function _couchdb_check_state(opts,cb){
         var doc = res.body
         // let state be an array
         var result = []
-        var _state = state
-        if(! _.isArray(state)){
+        let _state = state
+        if(! Array.isArray(state)){
             _state = [state]
         }
         if(doc[year] === undefined){
-            _.each(_state,function(s){
+            _state.forEach(function(s){
                 if(doc[state] === undefined){
                     result.push(null)
                 }else{
@@ -116,7 +116,7 @@ function _couchdb_check_state(opts,cb){
                 }
             })
         }else{
-            _.each(_state,function(s){
+            _state.forEach(function(s){
                 if(doc[year][state] === undefined){
                     result.push(null)
                 }else{
@@ -154,7 +154,7 @@ function _couchdb_check_state(opts,cb){
  */
 function _couchdb_check_exists(opts,cb){
     var c = {}
-    _.assign(c,config.couchdb,opts)
+    Object.assign(c,config.couchdb,opts)
     var db = c.db
     var id = c.doc
     var cdb   = c.host ||  '127.0.0.1'

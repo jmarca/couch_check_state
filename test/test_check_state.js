@@ -14,7 +14,7 @@ const fs = require('fs')
 const readFile = denodeify(fs.readFile);
 const testjson = rootdir+'/files/801230.json'
 const testattch = rootdir+'/files/801230_2008_001.png'
-const _ = require('lodash')
+
 const config = {}
 
 const headers = {
