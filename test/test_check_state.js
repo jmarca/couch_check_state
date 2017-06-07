@@ -1,29 +1,32 @@
 /* global require console process describe it */
 
-var should = require('should')
-var checker = require('../.')
-var path    = require('path')
-var rootdir = path.normalize(__dirname)
-var config_okay = require('config_okay')
-var config_file = rootdir+'/../test.config.json'
-var queue = require('queue-async')
-var request = require('request')
-var fs = require('fs')
-var testjson = rootdir+'/files/801230.json'
-var testattch = rootdir+'/files/801230_2008_001.png'
-var _ = require('lodash')
-var config
+const tap = require('tap')
 
-var headers = {
+const checker = require('../.')
+const path    = require('path')
+const rootdir = path.normalize(__dirname)
+const config_okay = require('config_okay')
+const config_file = rootdir+'/../test.config.json'
+
+const request = require('request')
+const denodeify = require('denodeify')
+const fs = require('fs')
+const readFile = denodeify(fs.readFile);
+const testjson = rootdir+'/files/801230.json'
+const testattch = rootdir+'/files/801230_2008_001.png'
+const _ = require('lodash')
+const config = {}
+
+const headers = {
     'content-type': 'application/json',
     accept: 'application/json'
 };
 
-var cdb
+let cdb
 
-function create_tempdb(cb){
-    var date = new Date()
-    var test_db_unique = [config.couchdb.db,
+function create_tempdb(config,cb){
+    const date = new Date()
+    const test_db_unique = [config.couchdb.db,
                           date.getHours(),
                           date.getMinutes(),
                           date.getSeconds(),
@@ -32,173 +35,207 @@ function create_tempdb(cb){
     cdb ='http://'+
         [config.couchdb.host+':'+config.couchdb.port
         ,config.couchdb.db].join('/')
-    request.put(cdb,{
-        headers:headers,
-        auth:{user:config.couchdb.auth.username,
-              pass:config.couchdb.auth.password,
-              'sendImmediately': false}
-    },
-                function(e,r,b){
-                if(r.error){
-                    // do not delete if we didn't create
-                    config.delete_db=false
-                }else{
-                    config.delete_db=true
-                }
-                //console.log(result.text)
-                return cb()
-            })
-    return null
-}
-
-function populate_tempdb(cb){
-    // console.log('populating test db')
-    var cdb ='http://'+
-        [config.couchdb.host+':'+config.couchdb.port
-        ,config.couchdb.db].join('/')
-    // console.log(cdb)
-    var docversion=''
-    queue(1)
-    .defer(fs.readFile,testjson)
-    .await(function(e,data){
-        var obj = JSON.parse(data)
-        var url = cdb+'/801230'
-        request({method:'PUT',
-                 headers:headers,
-                 url:url,
-                 json:obj}
-               ,function(e,r,b){
-                    // console.log(b)
-                    docversion = b.rev
-                    queue()
-                    .defer(function(cb3){
-                        // console.log('populating test db with png attachment')
-                        //console.log(res)
-
-                        var readstream = fs.createReadStream(testattch)
-                        var url = cdb+'/801230/801230_2008_001.png'
-                        url+='?rev='+docversion
-
-                        //console.log(url)
-                        ///var revision = docversion
-                        var rq = request.put(url,
-                                             {headers:{'content-type':'image/png'}},
-                                             function(e,r,b){
-
-                                                 cb3(null,r)
-
-                                             })
-
-                        readstream.pipe(rq)
-
-                    })
-                    .await(function(e){
-                        // console.log('both done')
-                        should.not.exist(e)
-                        return cb()
-                    })
-
-                })
-    })
-}
-
-before(function(done){
-
-    config_okay(config_file,function(err,c){
-        config=c
-        if(!c.couchdb.db){ throw new Error('need valid db defined in test.config.json')}
-        queue(1)
-        .defer(create_tempdb)
-        .defer(populate_tempdb)
-        .await(done)
-        return null
-    })
-    return null
-})
-
-after(function(done){
-
-    if(config.delete_db){
-        request.del(cdb,{
+    request.put(
+        cdb,
+        {
             headers:headers,
             auth:{user:config.couchdb.auth.username,
                   pass:config.couchdb.auth.password,
                   'sendImmediately': false}
+        },
+        function(e,r,b){
+            return cb()
         }
-                   ,done)
-        return null
-    }else{
-        console.log("not deleting what I didn't create:" + cdb)
-        return done()
+               )
+    return null
+}
+
+function populate_db(config,cb){
+    // console.log('populating test db')
+    const cdb ='http://'+
+        [config.couchdb.host+':'+config.couchdb.port
+        ,config.couchdb.db].join('/')
+    // console.log(cdb)
+    let docversion=''
+
+    return readFile(testjson)
+        .then( data => {
+            const obj = JSON.parse(data)
+            let url = cdb+'/801230'
+            request({method:'PUT',
+                     headers:headers,
+                     url:url,
+                     json:obj}
+                    ,function(e,r,b){
+                        // console.log(b)
+                        docversion = b.rev
+                        // console.log('populating test db with png attachment')
+                        //console.log(res)
+
+                        const readstream = fs.createReadStream(testattch)
+                        url = cdb+'/801230/801230_2008_001.png'
+                        url+='?rev='+docversion
+
+                        //console.log(url)
+                        ///const revision = docversion
+                        const rq = request.put(url,
+                                             {headers:{'content-type':'image/png'}},
+                                               function(e,r,b){
+
+                                                   return cb(e,b)
+                                             })
+
+                        readstream.pipe(rq)
+                        return null
+                    })
+            return null
+        })
+}
+
+
+
+
+
+function teardown(config,done){
+
+    request.del(cdb,{
+        headers:headers,
+        auth:{user:config.couchdb.auth.username,
+              pass:config.couchdb.auth.password,
+              'sendImmediately': false}
     }
-})
+                ,done)
+    return null
+}
 
 
-describe('get vds id states',function(){
-    it('should get chain lengths state for 801230, 2007'
-      ,function(done){
-           checker(_.assign({},config.couchdb,
-                            {'doc':801230
-                            ,'year':2008
-                            ,'state':'vdsraw_chain_lengths'})
-                  ,function(err,state){
-                       should.not.exist(err)
-                       state.should.have.property('length',5)
-                       state.should.eql([11,23,19,22,15])
-                       return done()
-                   })
-       });
-    it('should get _attachments in place of year attachment for state'
-      ,function(done){
-           checker(_.assign({},config.couchdb,
-                            {'doc':801230
-                            ,'year':'_attachments'
-                            ,'state':'801230_2008_001.png'}
-                           )
-                  ,function(err,state){
-                       should.not.exist(err)
-                       should.exist(state)
-                       state.should.have.property('digest','md5-wHfu6lFU9n1SHA9YykbyXQ==')
-                       return done()
-                   })
-       });
-    it('should not get a missing attachment state'
-      ,function(done){
-           checker(_.assign({},config.couchdb,
-                            {'doc':801230
-                            ,'year':'_attachments'
-                            ,'state':'801230_2008_raw_004.png'})
-                  ,function(err,state){
-                       should.not.exist(err)
-                       should.not.exist(state)
-                       return done()
+function get_states(t){
+    t.plan(3)
+    return t.test('should get chain lengths state for 801230, 2007',tt=>{
+        tt.plan(2)
+        const task = Object.assign({}
+                                   ,config.couchdb
+                                   ,{'doc':801230
+                                     ,'year':2008
+                                     ,'state':'vdsraw_chain_lengths'})
 
-                   })
-       });
-})
-describe('check existence',function(){
-    it('should get the rev for 801230'
-      ,function(done){
-           checker.check_exists(_.assign({},config.couchdb,
-                                         {'doc':801230})
-                               ,function(err,rev){
-                                    should.not.exist(err)
-                                    should.exist(rev)
-                                    rev.should.match(/\d+-\w+/)
-                                    return done()
+
+        checker(task,function(err,state){
+            tt.notOk(err,'should not get error on checker')
+            tt.same(state,[11,23,19,22,15])
+            return tt.end()
+        })
+    })
+        .then(t=>{
+            return t.test('should get _attachments in place of year attachment for state',tt=>{
+
+                tt.plan(4)
+                const task = Object.assign({}
+                                           ,config.couchdb
+                                           ,{'doc':801230
+                                             ,'year':'_attachments'
+                                             ,'state':'801230_2008_001.png'
+                                            })
+
+                checker(task,function(err,state){
+                    tt.notOk(err,'should not get error on checker')
+                    tt.ok(state)
+                    tt.ok(state.digest)
+                    tt.is(state.digest,'md5-wHfu6lFU9n1SHA9YykbyXQ==')
+                    return tt.end()
+                })
+                return null
+            })
+        })
+        .then(t=>{
+            return t.test('should not get a missing attachment state',tt=>{
+                tt.plan(2)
+                const task = Object.assign({}
+                                           ,config.couchdb
+                                           ,{'doc':801230
+                                             ,'year':'_attachments'
+                                             ,'state':'801230_2008_raw_004.png'})
+
+                checker(task,function(err,state){
+                    tt.notOk(err,'should not get error on checker')
+                    tt.notOk(state,'should not get non-existent state')
+                    return tt.end()
+                })
+                return null
+            })
+        })
+        .then(t=>{
+            return t.end()
+        })
+
+}
+
+function check_existence(t){
+    t.plan(2)
+    return t.test('should get the rev for 801230',tt=>{
+        tt.plan(3)
+        const task = Object.assign({}
+                                   ,config.couchdb
+                                   ,{'doc':801230}
+                                  )
+
+        checker.check_exists(task,function(err,rev){
+            tt.notOk(err,'should not fail check exist')
+            tt.ok(rev,'should get doc revision')
+            tt.ok(/\d+-\w+/.test(rev),'expect a format for revision')
+            return tt.end()
+        })
+    })
+        .then(t=>{
+            return t.test('should not get the revision for a non-doc',tt=>{
+                tt.plan(2)
+                const task = Object.assign({}
+                                           ,config.couchdb
+                                           ,{'doc':123456789}
+                                          )
+
+                checker.check_exists(task,function(err,rev){
+                    tt.notOk(err,'should not fail check exist')
+                    tt.notOk(rev,'should not have doc revision')
+                    return tt.end()
+                })
+            })
+        })
+        .then(t=>{
+            return t.end()
+        })
+}
+
+config_okay(config_file)
+    .then( c => {
+        config.couchdb=c.couchdb
+        if(!config.couchdb.db){ throw new Error('need valid db defined in test.config.json')}
+        create_tempdb(config,function(e,r){
+            if(e) throw e
+            populate_db(config,function(ee,rr){
+                return tap.test('check_existence',check_existence)
+                    .then( function() {
+                        return tap.test('get vds id states',get_states)
+                            .then(function(){
+                                teardown(config,function(eee,rrr){
+                                    return tap.end()
                                 })
-           return null
-       });
-    it('should not get the revision for a non-doc'
-      ,function(done){
-           checker.check_exists(_.assign({},config.couchdb,
-                                         {'doc':123456789}
-                                        )
-                               ,function(err,rev){
-                                    should.not.exist(err)
-                                    should.not.exist(rev)
-                                    return done()
-                                })
-           return null
-       });
-})
+                                return null
+                            })
+                            .catch( e => {
+                                console.log('testing error', e)
+                                throw e
+                            })
+                    })
+                    .catch( e => {
+                        console.log('testing error', e)
+                        throw e
+                    })
+            })
+            return null
+        })
+        return null
+    })
+    .catch( e => {
+        throw e
+    })
