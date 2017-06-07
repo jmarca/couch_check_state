@@ -39,11 +39,15 @@ function create_tempdb(config,cb){
         cdb,
         {
             headers:headers,
-            auth:{user:config.couchdb.auth.username,
-                  pass:config.couchdb.auth.password,
-                  'sendImmediately': false}
+            auth:{'user':config.couchdb.auth.username
+                  ,'pass':config.couchdb.auth.password
+                  //,'sendImmediately': false
+                 }
         },
         function(e,r,b){
+            console.log('create db, e',e)
+            //console.log('create db, r',r)
+            console.log('create db, b',b)
             return cb()
         }
                )
