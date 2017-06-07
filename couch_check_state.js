@@ -5,22 +5,23 @@ var config_okay = require('config_okay')
 
 function couchdb_check_state(opts,cb){
     if(config.couchdb.host === undefined && opts.config_file !== undefined){
-        return config_okay(opts.config_file,function(e,c){
-            config.couchdb = c.couchdb
-            return _couchdb_check_state(opts,cb)
-        })
+        return config_okay(opts.config_file)
+            .then(function(c){
+                config.couchdb = c.couchdb
+                return _couchdb_check_state(opts,cb)
+            })
     }
-
     // otherwise, hopefully everything is defined in the opts file!
     return _couchdb_check_state(opts,cb)
 }
 
 function couchdb_check_exists(opts,cb){
     if(config.couchdb.host === undefined && opts.config_file !== undefined){
-        return config_okay(opts.config_file,function(e,c){
-            config.couchdb = c.couchdb
-            return _couchdb_check_exists(opts,cb)
-        })
+        return config_okay(opts.config_file)
+            .then(function(c){
+                config.couchdb = c.couchdb
+                return _couchdb_check_exists(opts,cb)
+            })
     }
     // otherwise, hopefully everything is defined in the opts file!
     return _couchdb_check_exists(opts,cb)

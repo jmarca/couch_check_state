@@ -7,17 +7,17 @@
     "test": "test"
   },
   "dependencies": {
-    "config_okay": "",
-    "should": "",
-    "superagent": "",
-    "lodash": ""
+    "config_okay": "^1.0.0",
+    "superagent": "^3.5.2"
   },
   "devDependencies": {
-    "queue-async": "^1.0.7",
-    "request": "^2.49.0"
+    "denodeify": "^1.2.1",
+    "request": "^2.49.0",
+    "tap": "^10.3.3"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "tap test/**/*.js --cov",
+    "posttest": "tap --coverage-report=lcov"
   },
   "repository": {
     "type": "git",
