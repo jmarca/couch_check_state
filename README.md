@@ -2,6 +2,8 @@
 
 [![Greenkeeper badge](https://badges.greenkeeper.io/jmarca/couch_check_state.svg)](https://greenkeeper.io/)
 [![Build Status](https://travis-ci.org/jmarca/couch_check_state.svg?branch=master)](https://travis-ci.org/jmarca/couch_check_state)
+[![Code Climate](https://codeclimate.com/github/jmarca/couch_check_state/badges/gpa.svg)](https://codeclimate.com/github/jmarca/couch_check_state)
+[![Test Coverage](https://codeclimate.com/github/jmarca/couch_check_state/badges/coverage.svg)](https://codeclimate.com/github/jmarca/couch_check_state/coverage)
 
 This is a small package that uses superagent to access "state" stored
 in CouchDB.  What I often do is to use a CouchDB database as a way to
