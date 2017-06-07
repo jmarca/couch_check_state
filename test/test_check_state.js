@@ -41,13 +41,13 @@ function create_tempdb(config,cb){
             headers:headers,
             auth:{'user':config.couchdb.auth.username
                   ,'pass':config.couchdb.auth.password
-                  //,'sendImmediately': false
+                  //,'sendImmediately': false // apparently breaks couch 1.6.1
                  }
         },
         function(e,r,b){
-            console.log('create db, e',e)
+            //console.log('create db, e',e)
             //console.log('create db, r',r)
-            console.log('create db, b',b)
+            //console.log('create db, b',b)
             return cb()
         }
                )
@@ -145,7 +145,7 @@ function get_states(t){
                     tt.notOk(err,'should not get error on checker')
                     tt.ok(state)
                     tt.ok(state.digest)
-                    console.log(state)
+                    //console.log(state)
                     tt.is(state.length,457596,'expected file length')
                     const wantdigest = "md5-wHfu6lFU9n1SHA9YykbyXQ=="
                     tt.is(state.digest,wantdigest,'matched md5 digests')
