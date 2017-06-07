@@ -1,6 +1,7 @@
 # Couch Check State
 
 [![Greenkeeper badge](https://badges.greenkeeper.io/jmarca/couch_check_state.svg)](https://greenkeeper.io/)
+[![Build Status](https://travis-ci.org/jmarca/couch_check_state.svg?branch=master)](https://travis-ci.org/jmarca/couch_check_state)
 
 This is a small package that uses superagent to access "state" stored
 in CouchDB.  What I often do is to use a CouchDB database as a way to
