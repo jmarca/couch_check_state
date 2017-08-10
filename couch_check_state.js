@@ -43,7 +43,6 @@ function couchdb_check_exists(opts,cb){
 function make_state_getter(year){
     if(!year || year===undefined){
         return (state,doc) =>{
-            console.log(state,doc[state])
             return doc[state]
         }
     }else{
