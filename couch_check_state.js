@@ -82,6 +82,21 @@ function get_query(c){
     return cdb+'/'+db+'/'+id
 }
 
+
+function cb_or_promise( cb, req ) {
+    if(!cb || cb === undefined){
+        return req // send back the promise object
+    }else{
+        // wait here for promise object
+        req.then(res =>{
+            return cb(null,res)
+        }).catch(e =>{
+            return cb(e)
+        })
+        return null
+    }
+}
+
 /**
  * couchdb_check_state(opts,cb)
  * opts = {'db': the couchdb holding the document,
@@ -162,17 +177,7 @@ function _couchdb_check_state(opts,cb){
               if(result.length === 1) result = result[0]
               return result
           })
-    if(!cb || cb === undefined){
-        return req // send back the promise object
-    }else{
-        // wait here for promise object
-        req.then(res =>{
-            return cb(null,res)
-        }).catch(e =>{
-            return cb(e)
-        })
-        return null
-    }
+    return cb_or_promise(cb,req)
 }
 
 
@@ -212,17 +217,7 @@ function _couchdb_check_exists(opts,cb){
               return result
           })
 
-    if(!cb || cb === undefined){
-        return req // send back the promise object
-    }else{
-        // wait here for promise object
-        req.then(res =>{
-            return cb(null,res)
-        }).catch(e =>{
-            return cb(e)
-        })
-        return null
-    }
+    return cb_or_promise(cb,req)
 }
 
 module.exports=couchdb_check_state
