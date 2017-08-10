@@ -3,28 +3,37 @@ const config={'couchdb':{}}
 const config_okay = require('config_okay')
 
 // wrap call to config_okay, if needed
-function couchdb_check_state(opts,cb){
+function config_wrapper(opts){
     if(config.couchdb.host === undefined && opts.config_file !== undefined){
         return config_okay(opts.config_file)
-            .then(function(c){
+            .then(c => {
                 config.couchdb = c.couchdb
-                return _couchdb_check_state(opts,cb)
+                return config
             })
+    }else{
+        return Promise.resolve(config)
     }
-    // otherwise, hopefully everything is defined in the opts file!
-    return _couchdb_check_state(opts,cb)
+}
+
+
+function couchdb_check_state(opts,cb){
+     const req = config_wrapper(opts)
+        .then( () => {
+            return _couchdb_check_state(opts,cb)
+        })
+    if(!cb){
+        return req
+    }
 }
 
 function couchdb_check_exists(opts,cb){
-    if(config.couchdb.host === undefined && opts.config_file !== undefined){
-        return config_okay(opts.config_file)
-            .then(function(c){
-                config.couchdb = c.couchdb
-                return _couchdb_check_exists(opts,cb)
-            })
+     const req = config_wrapper(opts)
+        .then( () => {
+            return _couchdb_check_exists(opts,cb)
+        })
+    if(!cb){
+        return req
     }
-    // otherwise, hopefully everything is defined in the opts file!
-    return _couchdb_check_exists(opts,cb)
 }
 
 
