@@ -349,6 +349,10 @@ config_okay(config_file)
                 throw e
             })
     })
+    .then( async () =>{
+        await utils.teardown(config)
+    })
+
     .catch( e => {
         console.log('outside test loop, caught',e)
         throw e
