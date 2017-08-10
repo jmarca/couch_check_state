@@ -1,8 +1,8 @@
-var superagent = require('superagent')
+const superagent = require('superagent')
+const config={'couchdb':{}}
+const config_okay = require('config_okay')
 
-var config={'couchdb':{}}
-var config_okay = require('config_okay')
-
+// wrap call to config_okay, if needed
 function couchdb_check_state(opts,cb){
     if(config.couchdb.host === undefined && opts.config_file !== undefined){
         return config_okay(opts.config_file)
@@ -25,6 +25,52 @@ function couchdb_check_exists(opts,cb){
     }
     // otherwise, hopefully everything is defined in the opts file!
     return _couchdb_check_exists(opts,cb)
+}
+
+
+/**
+ * make_state_getter
+ *
+ * I made this into a function generator because I see that one use
+ * case is to grab several states with one call.
+ *
+ * @param {integer} year the year to inspect, or undefined
+ * @returns {function} a function that will get the desired state(s)
+ */
+function make_state_getter(year){
+    if(!year || year===undefined){
+        return (state,doc) =>{
+            console.log(state,doc[state])
+            return doc[state]
+        }
+    }else{
+        return (state,doc) =>{
+            if(doc[year] !== undefined ){
+                return doc[year][state]
+            }else{
+                return doc[year]
+            }
+        }
+    }
+}
+
+
+function get_query(c){
+    const db = c.db
+    if(db === undefined ){
+        throw('db is required in options object under \'db\' key')
+    }
+    const id = c.doc
+    if(id === undefined ){
+        throw('document id is required in options object under \'doc\' key')
+    }
+    const cport = c.port || 5984
+    const host = c.host || '127.0.0.1'
+    let cdb = host+':'+cport
+    if(! /http/.test(cdb)){
+        cdb = 'http://'+cdb
+    }
+    return cdb+'/'+db+'/'+id
 }
 
 /**
@@ -77,58 +123,50 @@ function couchdb_check_exists(opts,cb){
  *
  */
 function _couchdb_check_state(opts,cb){
-    var c = {}
-    Object.assign(c,config.couchdb,opts)
-    var db = c.db
-    var id = c.doc
-    var year = c.year
-    var state = c.state
     if(opts.couchdb !== undefined){
         throw new Error('hey, you are using an old way of doing this')
     }
-    var cdb   = c.host ||  '127.0.0.1'
-    var cport = c.port || 5984
-    cdb = cdb+':'+cport
-    if(! /http/.test(cdb)){
-        cdb = 'http://'+cdb
-    }
+    let c = {}
+    Object.assign(c,config.couchdb,opts)
+    const year = c.year
+    const query = get_query(c)
+    const state_getter = make_state_getter(year)
+    const state = c.state
 
-    var query = cdb+'/'+db+'/'+id
-    superagent
-    .get(query)
-    .set('accept','application/json')
-    .set('followRedirect',true)
-    .end(function(err,res){
-        if(err) return cb(err)
-        var doc = res.body
-        // let state be an array
-        var result = []
-        let _state = state
-        if(! Array.isArray(state)){
-            _state = [state]
-        }
-        if(doc[year] === undefined){
-            _state.forEach(function(s){
-                if(doc[state] === undefined){
-                    result.push(null)
-                }else{
-                    result.push(doc[state])
-                }
-            })
-        }else{
-            _state.forEach(function(s){
-                if(doc[year][state] === undefined){
-                    result.push(null)
-                }else{
-                    result.push(doc[year][state])
-                }
-            })
-        }
-        // if still here, have doc year, but maybe not doc state
-        if(result.length === 1) result = result[0]
-        return cb(null, result)
-    })
+    const req = superagent
+          .get(query)
+          .set('accept','application/json')
+          .set('followRedirect',true)
+          .then( res => {
+              const doc = res.body
+              // let state be an array
+              let result
+              let _state = state
+              if(! Array.isArray(state)){
+                  _state = [state]
+              }
+              result = _state.map(function(s){
+                  return state_getter(s,doc)
+              })
+              // for backwards compatibility, if array is length 1, make
+              // it not array
+              if(result.length === 1) result = result[0]
+              return result
+          })
+    if(!cb || cb === undefined){
+        return req // send back the promise object
+    }else{
+        // wait here for promise object
+        req.then(res =>{
+            return cb(null,res)
+        }).catch(e =>{
+            return cb(e)
+        })
+        return null
+    }
 }
+
+
 
 /**
  * couchdb_check_exists(opts,cb)
@@ -153,25 +191,29 @@ function _couchdb_check_state(opts,cb){
  *
  */
 function _couchdb_check_exists(opts,cb){
-    var c = {}
+    const c = {}
     Object.assign(c,config.couchdb,opts)
-    var db = c.db
-    var id = c.doc
-    var cdb   = c.host ||  '127.0.0.1'
-    var cport = c.port || 5984
-    cdb = cdb+':'+cport
-    if(! /http/.test(cdb)){
-        cdb = 'http://'+cdb
+    const query = get_query(c)
+    const req = superagent.head(query)
+          .then( res => {
+              let result
+              if(res.header.etag){
+                  result = JSON.parse(res.headers.etag)
+              }
+              return result
+          })
+
+    if(!cb || cb === undefined){
+        return req // send back the promise object
+    }else{
+        // wait here for promise object
+        req.then(res =>{
+            return cb(null,res)
+        }).catch(e =>{
+            return cb(e)
+        })
+        return null
     }
-    var result
-    var uri = cdb+'/'+db+'/'+id
-    superagent.head(uri)
-    .end(function(err,res){
-        if(res.header.etag){
-            result = JSON.parse(res.headers.etag)
-        }
-        return cb(null,result)
-    })
 }
 
 module.exports=couchdb_check_state

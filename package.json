@@ -12,11 +12,11 @@
   },
   "devDependencies": {
     "denodeify": "^1.2.1",
-    "request": "^2.49.0",
+    "request": "^2.81.0",
     "tap": "^10.3.3"
   },
   "scripts": {
-    "test": "tap test/**/*.js --cov",
+    "test": "tap test/**/test*.js --cov",
     "posttest": "tap --coverage-report=lcov"
   },
   "repository": {
