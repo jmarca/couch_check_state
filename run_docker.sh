@@ -104,7 +104,7 @@ make_couch_node_tests_docker(){
 }
 
 
-couch_set_state_test(){
+couch_node_test(){
     del_stopped "couch_node_tests"
     relies_on_network couchdb_nw
     docker run --rm -it -u node -v ${PWD}:/usr/src/dev  -w /usr/src/dev --network=couchdb_nw --name couch_node_tests jmarca/couch_node_tests bash
