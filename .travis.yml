@@ -37,4 +37,4 @@ notifications:
     on_failure: change
 
 after_script:
-  - ./node_modules/.bin/tap --coverage-report=lcov &&  ./cc-test-reporter after-build  -t lcov --debug --exit-code $TRAVIS_TEST_RESULT
+  - ./node_modules/.bin/tap --coverage-report=lcov &&  ./cc-test-reporter after-build  -t lcov --exit-code $TRAVIS_TEST_RESULT
