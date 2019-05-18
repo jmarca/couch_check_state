@@ -13,7 +13,7 @@
   "devDependencies": {
     "denodeify": "^1.2.1",
     "request": "^2.81.0",
-    "tap": "^13.1.10"
+    "tap": "^14.0.0"
   },
   "scripts": {
     "test": "tap test/**/test*.js --cov",
