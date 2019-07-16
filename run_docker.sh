@@ -62,10 +62,28 @@ relies_on_network(){
     done
 }
 
+
+couchdb(){
+    del_stopped "couchdb"
+    relies_on_network couchdb_nw
+    # fire up couchdb
+    docker run -d \
+           -e COUCHDB_USER=james \
+           -e COUCHDB_PASSWORD=grobblefruit \
+           --network=couchdb_nw \
+           --name couchdb \
+           couchdb:latest
+}
+
 couchdb_nw(){
     # create the network for communicating
     docker network create --driver bridge couchdb_nw
 }
+
+couch_setup_testdb(){
+    echo "{\"couchdb\":{\"host\":\"couchdb\",\"port\":5984,\"db\":\"newdb\",\"auth\":{\"username\":\"james\",\"password\":\"grobblefruit\"}}}" > test.config.json && chmod 0600 test.config.json
+}
+
 
 # couchdb(){
 #     relies_on_network couchdb_nw
@@ -107,5 +125,16 @@ make_couch_node_tests_docker(){
 couch_node_test(){
     del_stopped "couch_node_tests"
     relies_on_network couchdb_nw
-    docker run --rm -it -u node -v ${PWD}:/usr/src/dev  -w /usr/src/dev --network=couchdb_nw --name couch_node_tests jmarca/couch_node_tests bash
+    relies_on couchdb
+    docker run --rm -it \
+           -u node \
+           -v ${PWD}:/usr/src/dev \
+           -w /usr/src/dev \
+           --network=couchdb_nw \
+           -e COUCHDB_USER=james \
+           -e COUCHDB_PASSWORD=grobblefruit \
+           -e COUCHDB_PASS=grobblefruit \
+           -e COUCHDB_HOST=couchdb \
+           --name run_tests_sh jmarca/couch_node_tests:126 bash
+
 }
